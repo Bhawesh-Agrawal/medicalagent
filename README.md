@@ -26,6 +26,11 @@ A simple AI-powered medical scheduling backend built with **FastAPI**, **SQLite*
 * uv
 
 ---
+## Screenshots
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/ebe24134-cb21-44dc-aa6a-5ab857deb2ac" />
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/50022f86-04d1-4817-87ca-30c80ac8f05c" />
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/6c93eb48-d963-4613-b88e-c4dbe30b6704" />
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/22d57da9-cee5-4b2f-923f-1f4056ada787" />
 
 ## Installation
 
