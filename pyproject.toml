@@ -1,0 +1,7 @@
+[project]
+name = "medical-agent"
+version = "0.1.0"
+description = "agent that can look for available slot in doctors schedule and automatically appoint a schedule for client."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
