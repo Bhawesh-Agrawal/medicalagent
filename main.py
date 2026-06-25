@@ -6,6 +6,8 @@ from db.migration import Migration
 from db.synthetic_data_generation import SyntheticDataGenerator
 from tools import Tools
 
+from agent.setup_model import download_model
+
 app = FastAPI()
 
 class PatientLookupRequest(BaseModel):
@@ -64,6 +66,15 @@ def startup():
     print(seed_doctor_result)
 
     generator.close()
+
+    print("Checking model...")
+
+    model_status = download_model()
+
+    if model_status:
+        print("Model ready.")
+    else:
+        print("Model unavailable. Continuing startup without model.")
 
     print("Startup completed successfully.")
 
