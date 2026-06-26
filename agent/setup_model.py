@@ -1,33 +1,41 @@
-from huggingface_hub import hf_hub_download
-from pathlib import Path
+from ollama import Client
 
+MODEL_NAME = 'qwen2.5:7b-instruct'
 
-MODEL_REPO = "Qwen/Qwen2.5-7B-Instruct-GGUF"
-MODEL_FILE = "qwen2.5-7b-instruct-q3_k_m.gguf"
-
-
-def download_model():
-    model_dir = Path("models/qwen")
-    model_dir.mkdir(parents=True, exist_ok=True)
-
-    model_path = model_dir / MODEL_FILE
-
-    if model_path.exists():
-        print("Model already exists.")
-        return True
-
-    print("Downloading model...")
+def download_model(host : str = "http://localhost:11434") -> bool:
+    
+    client = Client(host = host)
 
     try:
-        hf_hub_download(
-            repo_id=MODEL_REPO,
-            filename=MODEL_FILE,
-            local_dir=model_dir
-        )
+        local_models = client.list()
 
-        print("Model download complete.")
+    except Exception as e:
+        print(f"Could not reach Ollama server at {host} : {e}")
+        return False
+
+    existing_names = {m.model for m in local_models.models}
+
+    if MODEL_NAME in existing_names:
+        return True
+
+    print(f"Downloading model '{MODEL_NAME}' via Ollama ...")
+
+    try:
+        last_status = None
+        for chunk in client.pull(MODEL_NAME, stream=True):
+            status = chunk.get("status") if isinstance(chunk, dict) else chunk.status
+            if status != last_status:
+                print(f" {status}")
+                last_status = status
+
+        print('Model download complete.')
+
         return True
 
     except Exception as e:
-        print(f"Model download failed: {str(e)}")
+        print(f"Model download failed : {e}")
         return False
+
+
+if __name__ == '__main__':
+    download_model()
