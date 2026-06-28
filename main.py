@@ -7,6 +7,7 @@ from db.synthetic_data_generation import SyntheticDataGenerator
 from tools import Tools
 
 from agent.setup_model import download_model
+from agent.agent import agent
 
 app = FastAPI()
 
@@ -40,6 +41,10 @@ class DoctorAvailabilityRequest(BaseModel):
 
 class BookAppointmentRequest(BaseModel):
     schedule_id: str
+
+
+class CallAgent(BaseModel):
+    user_input: str
 
 
 @app.on_event("startup")
@@ -99,7 +104,7 @@ def patient_lookup(payload: PatientLookupRequest):
 def available_doctor(payload: DoctorAvailabilityRequest):
     tools = Tools()
 
-    return tools.doctor_availibility(
+    return tools.doctor_availability(
         payload.day_of_week,
         payload.time_slot,
         payload.duration,
@@ -113,3 +118,7 @@ def book_appointment(payload: BookAppointmentRequest):
     return tools.book_appointment(
         payload.schedule_id
     )
+
+@app.post("/agent")
+def talk_to_agent(payload: CallAgent):
+    return agent(payload.user_input)

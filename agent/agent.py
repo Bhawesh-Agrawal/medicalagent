@@ -2,7 +2,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from agent.llm import get_llm
 from tools import TOOLS
 
-def main(user_input : str):
+def agent(user_input : str):
     llm = get_llm()
     llm_with_tools = llm.bind_tools(TOOLS)
     tool_map = {t.name: t for t in TOOLS}
@@ -50,8 +50,4 @@ def main(user_input : str):
 
     final_msg = llm_with_tools.invoke(messages)
 
-    print(final_msg.content)
-
-
-if __name__ == '__main__':
-    main("Check if a patient named Sydney Ford, born 1981-08-18, exists in the system")
+    return final_msg.content

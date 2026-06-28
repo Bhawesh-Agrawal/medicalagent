@@ -7,8 +7,7 @@ from utility import Utility
 
 class Tools:
     def __init__(self):
-        self.conn = sqlite3.connect("database.db")
-        self.cursor = self.conn.cursor()
+        self.db_path = "database.db"
         self.utility = Utility()
 
     def search_patient(
@@ -32,8 +31,10 @@ class Tools:
         """
 
         try:
-            self.cursor.execute(query, (first_name, last_name, dob))
-            patient = self.cursor.fetchone()
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (first_name, last_name, dob))
+                patient = cursor.fetchone()
 
             if patient:
                 return {
@@ -118,23 +119,24 @@ class Tools:
         """
 
         try:
-            self.cursor.execute(
-                query,
-                (
-                    patient_id,
-                    first_name,
-                    last_name,
-                    dob,
-                    gender,
-                    phone,
-                    email,
-                    insurance_company,
-                    member_id,
-                    group_id
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    query,
+                    (
+                        patient_id,
+                        first_name,
+                        last_name,
+                        dob,
+                        gender,
+                        phone,
+                        email,
+                        insurance_company,
+                        member_id,
+                        group_id
+                    )
                 )
-            )
-
-            self.conn.commit()
+                conn.commit()
 
             return {
                 "status": True,
@@ -163,6 +165,7 @@ class Tools:
             "Wednesday", "Thursday", "Friday", "Saturday"
         ],
         time_slot: str,
+        duration: Literal[15, 30],
         speciality: Literal[
             "Cardiology",
             "Dermatology",
@@ -187,7 +190,7 @@ class Tools:
         day_num = day_mapping[day_of_week]
 
         query = """
-        SELECT *
+        SELECT schedule_id, doctor_name, speciality, day_of_week, time_slot
         FROM doctor_schedule
         WHERE speciality = ?
         AND day_of_week = ?
@@ -196,18 +199,25 @@ class Tools:
         """
 
         try:
-            self.cursor.execute(
-                query,
-                (speciality, day_num, time_slot)
-            )
-
-            slot = self.cursor.fetchone()
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    query,
+                    (speciality, day_num, time_slot)
+                )
+                slot = cursor.fetchone()
 
             if slot:
                 return {
                     "status": True,
-                    "message": "Slot available",
-                    "data": slot
+                    "message": f"{duration} minute slot available",
+                    "data": {
+                        "schedule_id": slot[0],
+                        "doctor_name": slot[1],
+                        "speciality": slot[2],
+                        "day_of_week": slot[3],
+                        "time_slot": slot[4]
+                    }
                 }
 
             return {
@@ -233,30 +243,33 @@ class Tools:
         WHERE schedule_id = ?
         """
 
+        update_query = """
+        UPDATE doctor_schedule
+        SET is_booked = 1
+        WHERE schedule_id = ?
+        """
+
         try:
-            self.cursor.execute(check_query, (schedule_id,))
-            slot = self.cursor.fetchone()
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
 
-            if not slot:
-                return {
-                    "status": False,
-                    "message": "Invalid schedule ID"
-                }
+                cursor.execute(check_query, (schedule_id,))
+                slot = cursor.fetchone()
 
-            if slot[0] == 1:
-                return {
-                    "status": False,
-                    "message": "Slot already booked"
-                }
+                if not slot:
+                    return {
+                        "status": False,
+                        "message": "Invalid schedule ID"
+                    }
 
-            update_query = """
-            UPDATE doctor_schedule
-            SET is_booked = 1
-            WHERE schedule_id = ?
-            """
+                if slot[0] == 1:
+                    return {
+                        "status": False,
+                        "message": "Slot already booked"
+                    }
 
-            self.cursor.execute(update_query, (schedule_id,))
-            self.conn.commit()
+                cursor.execute(update_query, (schedule_id,))
+                conn.commit()
 
             return {
                 "status": True,
@@ -271,7 +284,7 @@ class Tools:
             }
 
 
-db = Tools()
+# Tool wrappers
 
 
 @tool
@@ -281,6 +294,7 @@ def search_patient_tool(
     dob: str
 ):
     """Search patient by name and DOB."""
+    db = Tools()
     return db.search_patient(first_name, last_name, dob)
 
 
@@ -297,6 +311,7 @@ def insert_patient_tool(
     group_id: str
 ):
     """Insert new patient."""
+    db = Tools()
     return db.insert_patient(
         first_name,
         last_name,
@@ -314,12 +329,15 @@ def insert_patient_tool(
 def doctor_availability_tool(
     day_of_week: str,
     time_slot: str,
+    duration: int,
     speciality: str
 ):
     """Check doctor availability."""
+    db = Tools()
     return db.doctor_availability(
         day_of_week,
         time_slot,
+        duration,
         speciality
     )
 
@@ -329,6 +347,7 @@ def book_appointment_tool(
     schedule_id: str
 ):
     """Book doctor appointment."""
+    db = Tools()
     return db.book_appointment(schedule_id)
 
 
