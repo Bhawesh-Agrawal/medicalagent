@@ -286,14 +286,22 @@ class Tools:
 
 # Tool wrappers
 
-
 @tool
 def search_patient_tool(
     first_name: str,
     last_name: str,
     dob: str
 ):
-    """Search patient by name and DOB."""
+    """Search whether a patient already exists in the system.
+
+    Call this FIRST before any registration or booking.
+    Returns patient_id if found, or status=False if not found.
+
+    Args:
+        first_name: Patient's first name (case-sensitive)
+        last_name: Patient's last name (case-sensitive)
+        dob: Date of birth in YYYY-MM-DD format
+    """
     db = Tools()
     return db.search_patient(first_name, last_name, dob)
 
@@ -310,18 +318,26 @@ def insert_patient_tool(
     member_id: str,
     group_id: str
 ):
-    """Insert new patient."""
+    """Register a new patient in the system.
+
+    Only call this after search_patient_tool confirms the patient does NOT exist.
+    All fields are required. Returns patient_id on success.
+
+    Args:
+        first_name: Patient's first name
+        last_name: Patient's last name
+        dob: Date of birth in YYYY-MM-DD format
+        gender: Must be exactly 'Male' or 'Female'
+        phone: Exactly 10 digits, no spaces or dashes
+        email: Valid email address
+        insurance_company: Name of insurance provider
+        member_id: Insurance member ID
+        group_id: Insurance group ID
+    """
     db = Tools()
     return db.insert_patient(
-        first_name,
-        last_name,
-        dob,
-        gender,
-        phone,
-        email,
-        insurance_company,
-        member_id,
-        group_id
+        first_name, last_name, dob, gender,
+        phone, email, insurance_company, member_id, group_id
     )
 
 
@@ -332,24 +348,38 @@ def doctor_availability_tool(
     duration: int,
     speciality: str
 ):
-    """Check doctor availability."""
+    """Check if a doctor slot is available for a given specialty, day, and time.
+
+    ALWAYS call this tool to check availability. Never assume a slot is
+    unavailable without calling this. If the slot is taken, ask the user
+    for a different day or time and call this tool again.
+
+    Returns schedule_id on success — pass this directly to book_appointment_tool.
+
+    Args:
+        day_of_week: Full day name e.g. 'Monday', 'Tuesday', 'Wednesday'
+        time_slot: Time in HH:MM 24-hour format e.g. '10:00', '14:30'
+        duration: 15 for existing patients, 30 for newly registered patients
+        speciality: One of: Cardiology, Dermatology, Orthopedics,
+                    Neurology, Pediatrics, ENT
+    """
     db = Tools()
-    return db.doctor_availability(
-        day_of_week,
-        time_slot,
-        duration,
-        speciality
-    )
+    return db.doctor_availability(day_of_week, time_slot, duration, speciality)
 
 
 @tool
-def book_appointment_tool(
-    schedule_id: str
-):
-    """Book doctor appointment."""
+def book_appointment_tool(schedule_id: str):
+    """Book a confirmed available appointment slot.
+
+    Only call this after doctor_availability_tool returns a valid schedule_id
+    AND the user has confirmed they want to proceed.
+    Marks the slot as booked — this cannot be undone.
+
+    Args:
+        schedule_id: The schedule_id returned by doctor_availability_tool
+    """
     db = Tools()
     return db.book_appointment(schedule_id)
-
 
 TOOLS = [
     search_patient_tool,
