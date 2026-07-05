@@ -158,6 +158,70 @@ class Tools:
                 "message": str(e)
             }
 
+    def get_available_doctors(self, day_of_week : Literal[
+        "Sunday", "Monday", "Tuesday",
+        "Wednesday", "Thursday", "Friday", "Saturday"
+    ], speciality: Literal[
+        "Cardiology",
+        "Dermatology",
+        "Orthopedics",
+        "Neurology",
+        "Pediatrics",
+        "ENT"
+    ]) -> dict:
+        day_mapping = {
+            "Sunday": 1,
+            "Monday": 2,
+            "Tuesday": 3,
+            "Wednesday": 4,
+            "Thursday": 5,
+            "Friday": 6,
+            "Saturday": 7
+        }
+
+        day_num = day_mapping[day_of_week]
+
+        query = """
+        SELECT schedule_id, doctor_name, speciality, time_slot
+        FROM doctor_schedule
+        WHERE speciality = ?
+        AND day_of_week = ?
+        AND is_booked = 0
+        ORDER BY time_slot ASC
+        """
+
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (speciality, day_num))
+                slots = cursor.fetchall()
+
+            if not slots:
+                return {
+                    "status": False,
+                    "message": "No available slots for the given day and speciality"
+                }
+            
+            return {
+                "status": True,
+                "message": "Available slots retrieved successfully",
+                "data": [
+                    {
+                        "schedule_id": slot[0],
+                        "doctor_name": slot[1],
+                        "speciality": slot[2],
+                        "time_slot": slot[3]
+                    }
+                    for slot in slots
+                ]
+            }
+
+        except Exception as e:
+            return {
+                "status": False,
+                "message": str(e)
+            }
+
     def doctor_availability(
         self,
         day_of_week: Literal[
@@ -381,9 +445,32 @@ def book_appointment_tool(schedule_id: str):
     db = Tools()
     return db.book_appointment(schedule_id)
 
+@tool
+def get_available_slots_tool(
+    day_of_week: str,
+    speciality: str
+):
+    """Get all available time slots for a given day and specialty.
+ 
+    Call this when the user has NOT specified an exact time, or says
+    something vague like 'Wednesday morning' or 'any time Thursday'.
+    Returns a list of available slots so the user can choose one.
+    Once the user picks a time, use doctor_availability_tool to confirm
+    and get the schedule_id for booking.
+ 
+    Args:
+        day_of_week: Full day name e.g. 'Monday', 'Wednesday'
+        speciality: One of: Cardiology, Dermatology, Orthopedics,
+                    Neurology, Pediatrics, ENT
+    """
+    db = Tools()
+    return db.get_available_doctors(day_of_week, speciality)
+
+
 TOOLS = [
     search_patient_tool,
     insert_patient_tool,
     doctor_availability_tool,
+    get_available_slots_tool,
     book_appointment_tool
 ]

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Literal
+import uuid
 
 from db.migration import Migration
 from db.synthetic_data_generation import SyntheticDataGenerator
@@ -8,6 +9,8 @@ from tools import Tools
 
 from agent.setup_model import download_model
 from agent.agent import agent
+
+from agent.loopagent import conversation
 
 app = FastAPI()
 
@@ -46,6 +49,15 @@ class BookAppointmentRequest(BaseModel):
 class CallAgent(BaseModel):
     user_input: str
 
+class SessionResponse(BaseModel):
+    session_id: str
+
+class ChatRequest(BaseModel):
+    message: str
+
+class ChatResponse(BaseModel):
+    session_id: str
+    reply: str
 
 @app.on_event("startup")
 def startup():
@@ -122,3 +134,17 @@ def book_appointment(payload: BookAppointmentRequest):
 @app.post("/agent")
 def talk_to_agent(payload: CallAgent):
     return agent(payload.user_input)
+
+@app.post("/session/start", response_model=SessionResponse)
+def start_session():
+    return SessionResponse(session_id=str(uuid.uuid4()))
+
+@app.post("/chat/{session_id}", response_model=ChatResponse)
+async def chat(session_id: str, body: ChatRequest):
+    if not session_id.strip():
+        return "Session ID cannot be empty"
+    if not body.message.strip():
+        return "Message cannot be empty"
+
+    reply = conversation(body.message, session_id)
+    return ChatResponse(session_id=session_id, reply=reply)
