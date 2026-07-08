@@ -3,6 +3,7 @@ import uuid
 from typing import Literal
 from langchain.tools import tool
 from utility import Utility
+from generate_email import send_email
 
 
 class Tools:
@@ -466,11 +467,41 @@ def get_available_slots_tool(
     db = Tools()
     return db.get_available_doctors(day_of_week, speciality)
 
+@tool
+def send_email_tool(
+    subject: str,
+    sender: str,
+    receiver: str,
+    body: str
+):
+    """Create a dummy email for confirmation of doctor appoitment.
+
+    Args:
+        subject: Subject line of the email
+        sender: Sender's email address
+        receiver: Receiver's email address
+        body: Body content of the email
+    """
+    try:
+        send_email(subject, sender, receiver, body)
+        return {
+            "status": True,
+            "message": "Email sent successfully"
+        }
+    except Exception as e:
+        return {
+            "status": False,
+            "message": f"Failed to send email: {e}"
+        }
+
+
+
 
 TOOLS = [
     search_patient_tool,
     insert_patient_tool,
     doctor_availability_tool,
     get_available_slots_tool,
-    book_appointment_tool
+    book_appointment_tool,
+    send_email_tool,
 ]
