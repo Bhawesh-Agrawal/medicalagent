@@ -10,7 +10,8 @@ class Migration:
     def create_table(self, retries=3):
         tables = [
             ("patient", self.schema.create_patient_table),
-            ("doctor_schedule", self.schema.create_doctor_table)
+            ("doctor_schedule", self.schema.create_doctor_table),
+            ("user", self.schema.create_user_table)
         ]
 
         results = {}

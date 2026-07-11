@@ -1,6 +1,6 @@
 from ollama import Client
 
-MODEL_NAME = 'qwen2.5:7b-instruct'
+MODEL_NAME = 'qwen2.5:7b'
 
 def download_model(host : str = "http://localhost:11434") -> bool:
     

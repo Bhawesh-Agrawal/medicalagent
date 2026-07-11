@@ -44,6 +44,7 @@ class DoctorAvailabilityRequest(BaseModel):
 
 class BookAppointmentRequest(BaseModel):
     schedule_id: str
+    patient_id: str
 
 
 class CallAgent(BaseModel):
@@ -128,7 +129,7 @@ def book_appointment(payload: BookAppointmentRequest):
     tools = Tools()
 
     return tools.book_appointment(
-        payload.schedule_id
+        payload.schedule_id, payload.patient_id
     )
 
 @app.post("/agent")

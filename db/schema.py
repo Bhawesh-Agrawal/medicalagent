@@ -41,3 +41,17 @@ class Schema:
         self.cursor.execute(query)
         self.conn.commit()
         return "Doctor Schedule Table Created"
+
+    def create_user_table(self):
+        query = '''
+        CREATE TABLE IF NOT EXISTS user(
+            user_id TEXT PRIMARY KEY,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL, 
+            session_id TEXT NOT NULL UNIQUE
+        )
+        '''
+
+        self.cursor.execute(query)
+        self.conn.commit()
+        return "User Table Created"
